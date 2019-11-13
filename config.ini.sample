@@ -1,0 +1,14 @@
+[general]
+testmode=false
+
+[zendesk]
+login=email
+token=token
+subdomain=zendeskdomain
+section=anumber
+permissiongroupid=anothernumber
+usersegmentid=yetanothernumber
+
+[notifications]
+user=pushoveruser
+token=pushovertoken
