@@ -1,5 +1,6 @@
 import random
 
+import sys
 from zenpy import Zenpy
 import time
 import requests
@@ -36,7 +37,7 @@ class Scraper:
             self.proxy_list = f.read().splitlines()
 
     def create_dummy_article(self):
-        return Article(title="Random Post",
+        return Article(title="This is a help post",
                 permission_group_id=self.config.get('zendesk','permissiongroupid'),
                 user_segment_id=self.config.get('zendesk','usersegmentid'),
                 locale="en-gb")
@@ -47,8 +48,9 @@ class Scraper:
             logging.error("No proxies available !")
             self.pushoverparams['message'] = 'Bot is down, no proxies available'
             requests.post('https://api.pushover.net/1/messages.json', params=self.pushoverparams)
+            sys.exit('No proxies available !')
             return False
-        if result is None:
+        if result is None or result.status_code == 429: # proxy failed but still have some left in the list, or we got throttled
             logging.debug("{} proxies left".format(len(self.proxy_list)))
             return True
         else:
@@ -60,9 +62,12 @@ class Scraper:
         def try_url(url):
             try:
                 proxy_index = random.randint(0, len(self.proxy_list) - 1)
-                proxy = {"http": self.proxy_list[proxy_index], "https": self.proxy_list[proxy_index]}
+                proxy = {"http": self.proxy_list[proxy_index]}
                 logging.debug("Using proxy " + self.proxy_list[proxy_index])
-                r = requests.get(url, proxies=proxy, timeout=(2, 2))
+                logging.info("Testing {}".format(url))
+                r = requests.get(url, proxies={
+                    "http": self.proxy_list[proxy_index],
+                },timeout=(2, 2))
                 logging.debug(r.status_code)
                 return r
             except Exception as e:
@@ -102,7 +107,6 @@ class Scraper:
 
             for i in range(rangestart, rangestart + nbarticlestotest, 1):
                 url = 'https://www.binance.com/en/support/articles/{}'.format(i)
-                logging.info("Testing {}".format(url))
                 r = None
                 if not self.config.getboolean('general', 'testmode'):
                     r = try_url(url)
@@ -110,8 +114,8 @@ class Scraper:
                     logging.info("Found news !")
                     self.pushoverparams['message'] = 'New Binance news ! {}'.format(url)
                     requests.post('https://api.pushover.net/1/messages.json', params=self.pushoverparams)
-                if r is not None and r.status_code == 429:
-                    self.pushoverparams['message'] = 'Bot is being throttled, going down!'.format(url)
-                    requests.post('https://api.pushover.net/1/messages.json', params=self.pushoverparams)
-                    exit(-1)
-                time.sleep(0.1)
+                #if r is not None and r.status_code == 429:
+                    #self.pushoverparams['message'] = 'Bot is being throttled, going down!'.format(url)
+                    #requests.post('https://api.pushover.net/1/messages.json', params=self.pushoverparams)
+                    #exit(-1)
+                time.sleep(2)
