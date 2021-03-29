@@ -42,7 +42,7 @@ parso==0.3.1
 pickleshare==0.7.4
 prompt-toolkit==1.0.15
 pycparser==2.18
-Pygments==2.2.0
+Pygments==2.7.4
 pyparsing==2.3.0
 python-dateutil==2.8.1
 pytz==2019.1
